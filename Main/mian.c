@@ -13,25 +13,20 @@ void main (void)
     P1M0 = 0x60;
     P1M1 = 0x00;
     Delay20us();
+    LED_OUT = 1;
     SR_04_Vcc = 1;
     SR_04_Gnd = 0;
-    Delay1000ms();
     while (1)
     {
         SR_04_Trig = 1;
         Delay20us();
-        Delay20us();
-        Delay20us();
         SR_04_Trig = 0;
-        if(SR_04_Echo == 1)
+        while(SR_04_Echo)
         {
             LED_OUT = 0;
         }
-        else
-        {
-            LED_OUT = 1;
-        }
         Delay1000ms();
+
     }
     
 

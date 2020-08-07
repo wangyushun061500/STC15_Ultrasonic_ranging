@@ -1,4 +1,4 @@
-C51 COMPILER V9.59.0.0   MIAN                                                              08/07/2020 21:53:15 PAGE 1   
+C51 COMPILER V9.59.0.0   MIAN                                                              08/07/2020 22:10:07 PAGE 1   
 
 
 C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MIAN
@@ -23,68 +23,58 @@ line level    source
   13   1          P1M0 = 0x60;
   14   1          P1M1 = 0x00;
   15   1          Delay20us();
-  16   1          SR_04_Vcc = 1;
-  17   1          SR_04_Gnd = 0;
-  18   1          Delay1000ms();
+  16   1          LED_OUT = 1;
+  17   1          SR_04_Vcc = 1;
+  18   1          SR_04_Gnd = 0;
   19   1          while (1)
   20   1          {
   21   2              SR_04_Trig = 1;
   22   2              Delay20us();
-  23   2              Delay20us();
-  24   2              Delay20us();
-  25   2              Delay20us();
-  26   2              Delay20us();
-  27   2              Delay20us();
-  28   2              Delay20us();
-  29   2              Delay20us();
-  30   2              SR_04_Trig = 0;
-  31   2              if(SR_04_Echo == 1)
-  32   2              {
-  33   3                  LED_OUT = 0;
-  34   3              }
-  35   2              else
-  36   2              {
-  37   3                  LED_OUT = 1;
-  38   3              }
-  39   2              Delay1000ms();
-  40   2          }
-  41   1          
-  42   1      
+  23   2              SR_04_Trig = 0;
+  24   2              while(SR_04_Echo)
+  25   2              {
+  26   3                  LED_OUT = 0;
+  27   3              }
+  28   2              Delay1000ms();
+  29   2      
+  30   2          }
+  31   1          
+  32   1      
+  33   1      }
+  34          
+  35          void Delay20us()    //@24.000MHz
+  36          {
+  37   1        unsigned char i;
+  38   1      
+  39   1        _nop_();
+  40   1        _nop_();
+  41   1        i = 117;
+  42   1        while (--i);
   43   1      }
   44          
-  45          void Delay20us()    //@24.000MHz
+  45          void Delay1000ms()    //@24.000MHz
   46          {
-  47   1        unsigned char i;
+  47   1        unsigned char i, j, k;
   48   1      
   49   1        _nop_();
   50   1        _nop_();
-  51   1        i = 117;
-  52   1        while (--i);
-  53   1      }
-  54          
-C51 COMPILER V9.59.0.0   MIAN                                                              08/07/2020 21:53:15 PAGE 2   
+  51   1        i = 92;
+  52   1        j = 50;
+  53   1        k = 238;
+  54   1        do
+C51 COMPILER V9.59.0.0   MIAN                                                              08/07/2020 22:10:07 PAGE 2   
 
-  55          void Delay1000ms()    //@24.000MHz
-  56          {
-  57   1        unsigned char i, j, k;
-  58   1      
-  59   1        _nop_();
-  60   1        _nop_();
-  61   1        i = 92;
-  62   1        j = 50;
-  63   1        k = 238;
-  64   1        do
-  65   1        {
-  66   2          do
-  67   2          {
-  68   3            while (--k);
-  69   3          } while (--j);
-  70   2        } while (--i);
-  71   1      }
+  55   1        {
+  56   2          do
+  57   2          {
+  58   3            while (--k);
+  59   3          } while (--j);
+  60   2        } while (--i);
+  61   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =     85    ----
+   CODE SIZE        =     61    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
