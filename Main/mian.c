@@ -10,7 +10,7 @@ void main (void)
 {
     P5M0 = 0x30;
     P5M1 = 0x00;
-    P1M0 = 0x20;
+    P1M0 = 0x60;
     P1M1 = 0x00;
     Delay20us();
     SR_04_Vcc = 1;
@@ -18,11 +18,11 @@ void main (void)
     Delay1000ms();
     while (1)
     {
-        SR_04_Echo = 0;
-        SR_04_Trig = 0;
-        Delay20us();
-        Delay20us();
         SR_04_Trig = 1;
+        Delay20us();
+        Delay20us();
+        Delay20us();
+        SR_04_Trig = 0;
         if(SR_04_Echo == 1)
         {
             LED_OUT = 0;
