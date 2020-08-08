@@ -25,7 +25,7 @@ float Fl;
 // 提前声明含糊
 
 void Delay20us();       //20us延时函数，24MHz
-void Delay20ms();
+void Delay40ms();
 void Delay1000ms();     //1s延时函数，24MHz
 void Timer0Init(void);
 void uart_init();
@@ -65,16 +65,21 @@ void main (void)
         SR_04_Trig = 0;
         Delay20us();
         SR_04_Trig = 1;;
+		if (Fl >= 400)
+		{
+			Fl = 0;
+		}
+		
         serial_one_send_float(Fl,1);
         SendString("cm\r\n");
-        if (Fl < 100)
+        if (Fl < 170)
         {
             BZ_OUT = 1;
         }else
         {
             BZ_OUT = 0;
         }
-        Delay20ms();
+        Delay40ms();
     }
 }
 
@@ -88,15 +93,15 @@ void Delay20us()		//@24.000MHz
 	while (--i);
 }
 
-void Delay20ms()		//@24.000MHz
+void Delay40ms()		//@24.000MHz
 {
 	unsigned char i, j, k;
 
 	_nop_();
 	_nop_();
-	i = 2;
-	j = 211;
-	k = 231;
+	i = 4;
+	j = 166;
+	k = 210;
 	do
 	{
 		do
@@ -105,7 +110,6 @@ void Delay20ms()		//@24.000MHz
 		} while (--j);
 	} while (--i);
 }
-
 
 void Delay1000ms()		//@24.000MHz
 {
