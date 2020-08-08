@@ -20,21 +20,23 @@
 
 bit busy;
 unsigned int temp;
-
+float Fl;
 
 // 提前声明含糊
 
 void Delay20us();       //20us延时函数，24MHz
+void Delay20ms();
 void Delay1000ms();     //1s延时函数，24MHz
 void Timer0Init(void);
 void uart_init();
 void SendData(unsigned char dat);
 void SendString(char *s);
+void serial_one_send_number(long num);
+void serial_one_send_float(double float_val, char bit_val);
 
 void main (void)
 {
-    unsigned char i;
-    unsigned int count,Difference;
+    unsigned int count;
     P5M0 = 0x30;
     P5M1 = 0x00;
     P1M0 = 0x60;
@@ -51,36 +53,29 @@ void main (void)
     EA = 1;
 	Delay1000ms();
     SendString("STC15F2K60S2\r\nUart ON !\r\n");
-    LED_OUT = 1;
+    BZ_OUT = 0;
     SR_04_Vcc = 1;
     SR_04_Gnd = 0;
     temp = 0;
     while (1)
     {
-        i++;
-        if (i == 10)
-        {
-            i = 0;
-        }
-        Difference = (temp - count);
+        Fl = (float)(temp - count);
+        Fl = Fl*3.4/20;
         count = temp;
-        SR_04_Trig = 1;
-        Delay20us();
         SR_04_Trig = 0;
-        SendString("第");
-        SendData('0' + i);
-        SendString("次循环\r\n");
-        SendData('0' + Difference/10000);
-        SendData('0' + Difference/1000/10);
-        SendData('0' + Difference/1000%10);
-        SendData('0' + Difference/100%10);
-        SendData('0' + Difference%10);
-        SendString("\r\n");
-        Delay1000ms();
-
+        Delay20us();
+        SR_04_Trig = 1;;
+        serial_one_send_float(Fl,1);
+        SendString("cm\r\n");
+        if (Fl < 100)
+        {
+            BZ_OUT = 1;
+        }else
+        {
+            BZ_OUT = 0;
+        }
+        Delay20ms();
     }
-    
-
 }
 
 void Delay20us()		//@24.000MHz
@@ -92,6 +87,25 @@ void Delay20us()		//@24.000MHz
 	i = 117;
 	while (--i);
 }
+
+void Delay20ms()		//@24.000MHz
+{
+	unsigned char i, j, k;
+
+	_nop_();
+	_nop_();
+	i = 2;
+	j = 211;
+	k = 231;
+	do
+	{
+		do
+		{
+			while (--k);
+		} while (--j);
+	} while (--i);
+}
+
 
 void Delay1000ms()		//@24.000MHz
 {
@@ -170,6 +184,62 @@ void SendString(char *s)
         SendData(*s++);         //发送当前字符
     }
 }
+
+/*uart发送long数值*/
+void serial_one_send_number(long num)
+{
+	long dat = 0;
+	unsigned char  length = 0;
+	if(num < 0)										//当数值为负数时
+	{
+		SendData('-');	//输出负号
+		num = -num;									//将数值取相反数
+	}
+	
+	if(num == 0)									//当数值为0时
+		SendData('0');	//输出字符0
+	else											//当数值不为0时
+	{
+		while(num)									//将数值倒过来
+		{
+			dat = dat * 10;
+			dat = dat + num % 10;
+			num = num / 10;
+			length++;
+		}
+		
+		while(length--)							//从第一位开始输出倒过来的数值
+		{
+			SendData(dat % 10 + '0');
+			dat = dat / 10;
+		}
+	}
+}
+
+
+void serial_one_send_float(double float_val, char bit_val)
+{
+	long xdata value_int = 0;
+	long xdata value_flt = 0;
+	
+	if(float_val < 0)
+	{
+		SendData('-');
+		float_val = -float_val;
+	}
+	
+	value_int = (long)float_val;
+	
+	float_val = float_val - (double)value_int;
+	
+	for(;bit_val;bit_val--)
+		float_val = float_val * 10;
+	
+	serial_one_send_number(value_int);
+	SendData('.');
+	serial_one_send_number((long)float_val);
+}
+
 
 /* t0中断服务程序 */
 void T0_isr() interrupt 1
