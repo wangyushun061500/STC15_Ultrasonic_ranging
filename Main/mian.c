@@ -1,30 +1,81 @@
 #include "config.h"
 #include "INTRINS.H"
 
-// æå‰å£°æ˜Žå«ç³Š
 
-void Delay20us();       //20uså»¶æ—¶å‡½æ•°ï¼Œ24MHz
-void Delay1000ms();     //1så»¶æ—¶å‡½æ•°ï¼Œ24MHz
+// ÉùÃ÷´®¿Ú´«ÊäÉèÖÃ
+
+#define FOSC 24000000L		//ÏµÍ³ÆµÂÊ
+#define BAUD 115200 		//²¨ÌØÂÊ
+#define NONE_PARITY     0       //ÎÞÐ£Ñé
+#define ODD_PARITY      1       //ÆæÐ£Ñé
+#define EVEN_PARITY     2       //Å¼Ð£Ñé
+#define MARK_PARITY     3       //±ê¼ÇÐ£Ñé
+#define SPACE_PARITY    4       //¿Õ°×Ð£Ñé
+#define PARITYBIT NONE_PARITY   //¶¨ÒåÐ£ÑéÎ»
+#define S1_S0 0x40              //P_SW1.6
+#define S1_S1 0x80              //P_SW1.7
+
+
+// ±äÁ¿ÉùÃ÷
+
+bit busy;
+unsigned int temp;
+
+
+// ÌáÇ°ÉùÃ÷º¬ºý
+
+void Delay20us();       //20usÑÓÊ±º¯Êý£¬24MHz
+void Delay1000ms();     //1sÑÓÊ±º¯Êý£¬24MHz
+void Timer0Init(void);
+void uart_init();
+void SendData(unsigned char dat);
+void SendString(char *s);
 
 void main (void)
 {
+    unsigned char i;
+    unsigned int count,Difference;
     P5M0 = 0x30;
     P5M1 = 0x00;
     P1M0 = 0x60;
     P1M1 = 0x00;
     Delay20us();
+    Timer0Init();
+    uart_init();
+	T2L = (65536 - (FOSC/4/BAUD));   //ÉèÖÃ²¨ÌØÂÊÖØ×°Öµ
+    T2H = (65536 - (FOSC/4/BAUD))>>8;
+    AUXR = 0x14;                //T2Îª1TÄ£Ê½, ²¢Æô¶¯¶¨Ê±Æ÷2
+    AUXR |= 0x01;               //Ñ¡Ôñ¶¨Ê±Æ÷2Îª´®¿Ú1µÄ²¨ÌØÂÊ·¢ÉúÆ÷
+    ES = 1;                     //Ê¹ÄÜ´®¿Ú1ÖÐ¶Ï
+    ET0 = 1;
+    EA = 1;
+	Delay1000ms();
+    SendString("STC15F2K60S2\r\nUart ON !\r\n");
     LED_OUT = 1;
     SR_04_Vcc = 1;
     SR_04_Gnd = 0;
+    temp = 0;
     while (1)
     {
+        i++;
+        if (i == 10)
+        {
+            i = 0;
+        }
+        Difference = (temp - count);
+        count = temp;
         SR_04_Trig = 1;
         Delay20us();
         SR_04_Trig = 0;
-        while(SR_04_Echo)
-        {
-            LED_OUT = 0;
-        }
+        SendString("µÚ");
+        SendData('0' + i);
+        SendString("´ÎÑ­»·\r\n");
+        SendData('0' + Difference/10000);
+        SendData('0' + Difference/1000/10);
+        SendData('0' + Difference/1000%10);
+        SendData('0' + Difference/100%10);
+        SendData('0' + Difference%10);
+        SendString("\r\n");
         Delay1000ms();
 
     }
@@ -58,4 +109,94 @@ void Delay1000ms()		//@24.000MHz
 			while (--k);
 		} while (--j);
 	} while (--i);
+}
+
+/* t0³õÊ¼»¯³ÌÐò£¬24MHz¶¨Ê±1us */
+void Timer0Init(void)		//1Î¢Ãë@24.000MHz
+{
+	AUXR |= 0x80;		//¶¨Ê±Æ÷Ê±ÖÓ1TÄ£Ê½
+	TMOD &= 0xF0;		//ÉèÖÃ¶¨Ê±Æ÷Ä£Ê½
+	TL0 = 0xE8;		//ÉèÖÃ¶¨Ê±³õÖµ
+	TH0 = 0xFF;		//ÉèÖÃ¶¨Ê±³õÖµ
+	TF0 = 0;		//Çå³ýTF0±êÖ¾
+	TR0 = 1;		//¶¨Ê±Æ÷0¿ªÊ¼¼ÆÊ±
+}
+
+/*uart³õÊ¼»¯º¯Êý*/
+void uart_init ()
+{
+	ACC = P_SW1;
+    ACC &= ~(S1_S0 | S1_S1);    //S1_S0=0 S1_S1=0
+    P_SW1 = ACC;                //(P3.0/RxD, P3.1/TxD)
+	#if (PARITYBIT == NONE_PARITY)
+    SCON = 0x50;                //8Î»¿É±ä²¨ÌØÂÊ
+	#elif (PARITYBIT == ODD_PARITY) || (PARITYBIT == EVEN_PARITY) || (PARITYBIT == MARK_PARITY)
+    SCON = 0xda;                //9Î»¿É±ä²¨ÌØÂÊ,Ð£ÑéÎ»³õÊ¼Îª1
+	#elif (PARITYBIT == SPACE_PARITY)
+    SCON = 0xd2;                //9Î»¿É±ä²¨ÌØÂÊ,Ð£ÑéÎ»³õÊ¼Îª0
+	#endif
+}
+
+/*´®¿ÚÊý¾Ý·¢ËÍ*/
+void SendData(unsigned char dat)
+{
+    while (busy);               //µÈ´ýÇ°ÃæµÄÊý¾Ý·¢ËÍÍê³É
+    ACC = dat;                  //»ñÈ¡Ð£ÑéÎ»P (PSW.0)
+    if (P)                      //¸ù¾ÝPÀ´ÉèÖÃÐ£ÑéÎ»
+    {
+		#if (PARITYBIT == ODD_PARITY)
+			TB8 = 0;                //ÉèÖÃÐ£ÑéÎ»Îª0
+		#elif (PARITYBIT == EVEN_PARITY)
+			TB8 = 1;                //ÉèÖÃÐ£ÑéÎ»Îª1
+		#endif
+    }
+    else
+    {
+		#if (PARITYBIT == ODD_PARITY)
+    	    TB8 = 1;                //ÉèÖÃÐ£ÑéÎ»Îª1
+		#elif (PARITYBIT == EVEN_PARITY)
+    	    TB8 = 0;                //ÉèÖÃÐ£ÑéÎ»Îª0
+		#endif
+    }
+    busy = 1;
+    SBUF = ACC;                 //Ð´Êý¾Ýµ½UARTÊý¾Ý¼Ä´æÆ÷
+}
+
+/*·¢ËÍ×Ö·û´®*/
+void SendString(char *s)
+{
+    while (*s)                  //¼ì²â×Ö·û´®½áÊø±êÖ¾
+    {
+        SendData(*s++);         //·¢ËÍµ±Ç°×Ö·û
+    }
+}
+
+/* t0ÖÐ¶Ï·þÎñ³ÌÐò */
+void T0_isr() interrupt 1
+{
+    if (SR_04_Echo == 1)
+    {
+        temp++;
+        if(temp == 65535)
+        {
+            temp = 0;
+        }
+    }
+    
+}
+
+/*uartÖÐ¶Ï·þÎñ³ÌÐò*/
+void Uart() interrupt 4
+{
+    if (RI)
+    {
+        RI = 0;                 //Çå³ýRIÎ»
+        P0 = SBUF;              //P0ÏÔÊ¾´®¿ÚÊý¾Ý
+        P54 = RB8;              //P2.2ÏÔÊ¾Ð£ÑéÎ»
+    }
+    if (TI)
+    {
+        TI = 0;                 //Çå³ýTIÎ»
+        busy = 0;               //ÇåÃ¦±êÖ¾
+    }
 }
