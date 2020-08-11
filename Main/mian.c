@@ -220,7 +220,6 @@ void serial_one_send_number(long num)
 	}
 }
 
-
 void serial_one_send_float(double float_val, char bit_val)
 {
 	long xdata value_int = 0;
